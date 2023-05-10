@@ -1,0 +1,25 @@
+From dfd348bcfd5a2fd35b26ff062f73e19316d0c03f Mon Sep 17 00:00:00 2001
+From: TheShermanTanker <tanksherman27@gmail.com>
+Date: Wed, 29 Nov 2023 12:50:22 +0800
+Subject: [PATCH] Linker flag change required for win32 threading
+
+---
+ configure | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/configure b/configure
+index f8abb26b471..b13a3b4e1cd 100755
+--- a/configure
++++ b/configure
+@@ -10444,7 +10444,7 @@ case "$target" in
+   x86_64-*mingw* | *-w64-mingw*)
+   # MinGW-w64 does not use newlib, nor does it use winsup. It may,
+   # however, use a symlink named 'mingw' in ${prefix} .
+-    FLAGS_FOR_TARGET=$FLAGS_FOR_TARGET' -L${prefix}/${target}/lib -L${prefix}/mingw/lib -isystem ${prefix}/${target}/include -isystem ${prefix}/mingw/include'
++    FLAGS_FOR_TARGET=$FLAGS_FOR_TARGET' -L$$r/$(HOST_SUBDIR)/gcc -isystem ${prefix}/${target}/include -isystem ${prefix}/mingw/include'
+     ;;
+   *-mingw*)
+   # MinGW can't be handled as Cygwin above since it does not use newlib.
+-- 
+2.41.0
+
