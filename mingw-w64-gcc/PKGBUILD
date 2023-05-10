@@ -5,21 +5,13 @@
 # Contributor: wirx6 <wirx654@gmail.com>
 # Contributor: Kirill Müller <krlmlr@mailbox.org>
 
-if [[ ${CARCH} != i686 ]]; then
-  _enable_fortran=yes
-  _enable_ada=yes
-  _enable_objc=yes
-  _enable_rust=no
-  _enable_jit=yes
-else
-  _enable_fortran=yes # Change it to no after dropping gimp
-  _enable_ada=no
-  _enable_objc=no
-  _enable_rust=no
-  _enable_jit=no
-fi
+_enable_fortran=no
+_enable_ada=no
+_enable_objc=no
+_enable_rust=no
+_enable_jit=no
 
-_threads="posix"
+_threads="win32"
 
 _realname=gcc
 pkgbase=mingw-w64-${_realname}
@@ -75,12 +67,13 @@ makedepends=("${MINGW_PACKAGE_PREFIX}-${_realname}"
              "${MINGW_PACKAGE_PREFIX}-mpfr"
              "${MINGW_PACKAGE_PREFIX}-python"
              "${MINGW_PACKAGE_PREFIX}-windows-default-manifest"
-             "${MINGW_PACKAGE_PREFIX}-winpthreads"
+#            "${MINGW_PACKAGE_PREFIX}-winpthreads"
              "${MINGW_PACKAGE_PREFIX}-zlib"
              "${MINGW_PACKAGE_PREFIX}-zstd")
 options=('!emptydirs') # '!strip' 'debug')
 source=(${_url}/${_sourcedir}.tar.xz{,.sig}
         "gdbinit"
+        0001-Linker-flag-change-required-for-win32-threading.patch
         0003-Windows-Follow-Posix-dir-exists-semantics-more-close.patch
         0005-Windows-Don-t-ignore-native-system-header-dir.patch
         0007-Build-EXTRA_GNATTOOLS-for-Ada.patch
@@ -96,6 +89,7 @@ source=(${_url}/${_sourcedir}.tar.xz{,.sig}
 sha256sums=('e2b09ec21660f01fecffb715e0120265216943f038d0e48a9868713e54f06cea'
             'SKIP'
             'bce81824fc89e5e62cca350de4c17a27e27a18a1a1ad5ca3492aec1fc5af3234'
+            '0c919f89f1aa50141f957dd16272fe167996a17454b1b67a04b72232b1bc2e3d'
             '3fc35067823f87e48dd3bfd265e7593000dc110fa9ad5f16c81b896765fc897a'
             'f7da015a69cff58fbc4b39c7072dfff334a01024470bb092ba31ad648899adf0'
             '90d5cb570083f9dea4ac0f0f87e3e8d2230f5052e6f9b946061a20a224a9d195'
@@ -136,6 +130,7 @@ prepare() {
   cd "${srcdir}"/${_sourcedir}
 
   apply_patch_with_msg \
+    0001-Linker-flag-change-required-for-win32-threading.patch \
     0003-Windows-Follow-Posix-dir-exists-semantics-more-close.patch \
     0005-Windows-Don-t-ignore-native-system-header-dir.patch \
     0007-Build-EXTRA_GNATTOOLS-for-Ada.patch \
@@ -162,8 +157,8 @@ prepare() {
   apply_patch_with_msg \
     2001-fix-building-rust-on-mingw-w64.patch
 
-  # apply_patch_with_msg \
-  #   9002-native-tls.patch
+  apply_patch_with_msg \
+    9002-native-tls.patch
 
   autoreconf -fiv
 
@@ -253,11 +248,13 @@ build() {
     --enable-graphite \
     --enable-fully-dynamic-string \
     --enable-libstdcxx-backtrace=yes \
+    --enable-libstdcxx-threads \
     --enable-libstdcxx-filesystem-ts \
     --enable-libstdcxx-time \
     --disable-libstdcxx-pch \
     --enable-lto \
     --enable-libgomp \
+    --enable-tls \
     --disable-libssp \
     --disable-multilib \
     --disable-rpath \
@@ -288,7 +285,7 @@ build() {
 
 package_gcc-libs() {
   pkgdesc="GNU Compiler Collection (libraries) for MinGW-w64"
-  depends=("${MINGW_PACKAGE_PREFIX}-libwinpthread")
+# depends=("${MINGW_PACKAGE_PREFIX}-libwinpthread")
   provides=("${MINGW_PACKAGE_PREFIX}-omp")
 
   # Licensing information
@@ -339,7 +336,7 @@ package_gcc() {
            "${MINGW_PACKAGE_PREFIX}-mpc"
            "${MINGW_PACKAGE_PREFIX}-${_realname}-libs=${pkgver}-${pkgrel}"
            "${MINGW_PACKAGE_PREFIX}-windows-default-manifest"
-           "${MINGW_PACKAGE_PREFIX}-winpthreads"
+#          "${MINGW_PACKAGE_PREFIX}-winpthreads"
            "${MINGW_PACKAGE_PREFIX}-zlib"
            "${MINGW_PACKAGE_PREFIX}-zstd")
   provides=("${MINGW_PACKAGE_PREFIX}-${_realname}-base"
@@ -530,7 +527,7 @@ package_gcc-lto-dump() {
            "${MINGW_PACKAGE_PREFIX}-${_realname}-libs=${pkgver}-${pkgrel}"
            "${MINGW_PACKAGE_PREFIX}-gmp"
            "${MINGW_PACKAGE_PREFIX}-isl"
-           "${MINGW_PACKAGE_PREFIX}-libwinpthread"
+#          "${MINGW_PACKAGE_PREFIX}-libwinpthread"
            "${MINGW_PACKAGE_PREFIX}-mpc"
            "${MINGW_PACKAGE_PREFIX}-mpfr"
            "${MINGW_PACKAGE_PREFIX}-zlib"
@@ -547,7 +544,7 @@ package_libgccjit() {
            "${MINGW_PACKAGE_PREFIX}-${_realname}-libs=${pkgver}-${pkgrel}"
            "${MINGW_PACKAGE_PREFIX}-gmp"
            "${MINGW_PACKAGE_PREFIX}-isl"
-           "${MINGW_PACKAGE_PREFIX}-libwinpthread"
+#          "${MINGW_PACKAGE_PREFIX}-libwinpthread"
            "${MINGW_PACKAGE_PREFIX}-mpc"
            "${MINGW_PACKAGE_PREFIX}-mpfr"
            "${MINGW_PACKAGE_PREFIX}-zlib"
