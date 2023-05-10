@@ -5,26 +5,19 @@
 # Contributor: wirx6 <wirx654@gmail.com>
 # Contributor: Kirill Müller <krlmlr@mailbox.org>
 
-if [[ ${CARCH} != i686 ]]; then
-  _enable_ada=yes
-  _enable_objc=yes
-  _enable_rust=yes
-  _enable_jit=yes
-else
-  _enable_ada=no
-  _enable_objc=no
-  _enable_rust=no
-  _enable_jit=no
-fi
+_enable_ada=no
+_enable_objc=no
+_enable_rust=no
+_enable_jit=no
 
-_threads="posix"
+_threads="win32"
 
 _realname=gcc
 pkgbase=mingw-w64-${_realname}
 pkgname=("${MINGW_PACKAGE_PREFIX}-${_realname}"
          "${MINGW_PACKAGE_PREFIX}-${_realname}-libs"
-         "${MINGW_PACKAGE_PREFIX}-${_realname}-libgfortran"
-         "${MINGW_PACKAGE_PREFIX}-${_realname}-fortran"
+#        "${MINGW_PACKAGE_PREFIX}-${_realname}-libgfortran"
+#        "${MINGW_PACKAGE_PREFIX}-${_realname}-fortran"
          "${MINGW_PACKAGE_PREFIX}-${_realname}-lto-dump"
          $([[ "$_enable_ada" == "yes" ]] && echo "${MINGW_PACKAGE_PREFIX}-${_realname}-ada")
          $([[ "$_enable_objc" == "yes" ]] && echo "${MINGW_PACKAGE_PREFIX}-${_realname}-objc")
@@ -72,13 +65,14 @@ makedepends=("${MINGW_PACKAGE_PREFIX}-${_realname}"
              "${MINGW_PACKAGE_PREFIX}-mpfr"
              "${MINGW_PACKAGE_PREFIX}-python"
              "${MINGW_PACKAGE_PREFIX}-windows-default-manifest"
-             "${MINGW_PACKAGE_PREFIX}-winpthreads"
+#            "${MINGW_PACKAGE_PREFIX}-winpthreads"
              "${MINGW_PACKAGE_PREFIX}-zlib"
              "${MINGW_PACKAGE_PREFIX}-zstd")
 options=('!emptydirs') # '!strip' 'debug')
 source=(${_url}/${_sourcedir}.tar.xz{,.sig}
         "gdbinit"
         0001-missing-__thiscall-attribute-on-builtin-declaration-of-__cxa_thread_atexit.patch
+        0001-Linker-flag-change-required-for-win32-threading.patch
         0003-Windows-Follow-Posix-dir-exists-semantics-more-close.patch
         0005-Windows-Don-t-ignore-native-system-header-dir.patch
         0007-Build-EXTRA_GNATTOOLS-for-Ada.patch
@@ -96,6 +90,7 @@ sha256sums=('e283c654987afe3de9d8080bc0bd79534b5ca0d681a73a11ff2b5d3767426840'
             'SKIP'
             'bce81824fc89e5e62cca350de4c17a27e27a18a1a1ad5ca3492aec1fc5af3234'
             '7cb64cb9dc7117d4d5d32bd7910ced7c170718f92bc0576594506edb3aeabb42'
+            '0c919f89f1aa50141f957dd16272fe167996a17454b1b67a04b72232b1bc2e3d'
             '3fc35067823f87e48dd3bfd265e7593000dc110fa9ad5f16c81b896765fc897a'
             '57f0081655ba9a94ed7cc3d8b67a79aee8442a56613bd17f9809a7b0e68e43cd'
             '90d5cb570083f9dea4ac0f0f87e3e8d2230f5052e6f9b946061a20a224a9d195'
@@ -141,6 +136,7 @@ prepare() {
     0001-missing-__thiscall-attribute-on-builtin-declaration-of-__cxa_thread_atexit.patch
 
   apply_patch_with_msg \
+    0001-Linker-flag-change-required-for-win32-threading.patch \
     0003-Windows-Follow-Posix-dir-exists-semantics-more-close.patch \
     0005-Windows-Don-t-ignore-native-system-header-dir.patch \
     0007-Build-EXTRA_GNATTOOLS-for-Ada.patch \
@@ -204,7 +200,7 @@ build() {
     local _arch=nocona
   fi
 
-  local _languages="c,lto,c++,fortran"
+  local _languages="c,lto,c++" # ,fortran"
   if [ "$_enable_ada" == "yes" ]; then
     _languages+=",ada"
   fi
@@ -256,6 +252,7 @@ build() {
     --enable-threads=${_threads} \
     --enable-graphite \
     --enable-fully-dynamic-string \
+    --enable-libstdcxx-threads \
     --enable-libstdcxx-filesystem-ts \
     --enable-libstdcxx-time \
     --disable-libstdcxx-pch \
@@ -291,7 +288,7 @@ build() {
 
 package_gcc-libs() {
   pkgdesc="GNU Compiler Collection (libraries) for MinGW-w64"
-  depends=("${MINGW_PACKAGE_PREFIX}-libwinpthread")
+# depends=("${MINGW_PACKAGE_PREFIX}-libwinpthread")
   provides=("${MINGW_PACKAGE_PREFIX}-omp")
 
   # Licensing information
@@ -342,7 +339,7 @@ package_gcc() {
            "${MINGW_PACKAGE_PREFIX}-mpc"
            "${MINGW_PACKAGE_PREFIX}-${_realname}-libs=${pkgver}-${pkgrel}"
            "${MINGW_PACKAGE_PREFIX}-windows-default-manifest"
-           "${MINGW_PACKAGE_PREFIX}-winpthreads"
+#          "${MINGW_PACKAGE_PREFIX}-winpthreads"
            "${MINGW_PACKAGE_PREFIX}-zlib"
            "${MINGW_PACKAGE_PREFIX}-zstd")
   provides=("${MINGW_PACKAGE_PREFIX}-${_realname}-base"
@@ -524,7 +521,7 @@ package_gcc-lto-dump() {
            "${MINGW_PACKAGE_PREFIX}-${_realname}-libs=${pkgver}-${pkgrel}"
            "${MINGW_PACKAGE_PREFIX}-gmp"
            "${MINGW_PACKAGE_PREFIX}-isl"
-           "${MINGW_PACKAGE_PREFIX}-libwinpthread"
+#          "${MINGW_PACKAGE_PREFIX}-libwinpthread"
            "${MINGW_PACKAGE_PREFIX}-mpc"
            "${MINGW_PACKAGE_PREFIX}-mpfr"
            "${MINGW_PACKAGE_PREFIX}-zlib"
@@ -541,7 +538,7 @@ package_libgccjit() {
            "${MINGW_PACKAGE_PREFIX}-${_realname}-libs=${pkgver}-${pkgrel}"
            "${MINGW_PACKAGE_PREFIX}-gmp"
            "${MINGW_PACKAGE_PREFIX}-isl"
-           "${MINGW_PACKAGE_PREFIX}-libwinpthread"
+#          "${MINGW_PACKAGE_PREFIX}-libwinpthread"
            "${MINGW_PACKAGE_PREFIX}-mpc"
            "${MINGW_PACKAGE_PREFIX}-mpfr"
            "${MINGW_PACKAGE_PREFIX}-zlib"
