@@ -6,11 +6,11 @@
 # Contributor: Kirill Müller <krlmlr@mailbox.org>
 
 if [[ ${CARCH} != i686 ]]; then
-  _enable_ada=yes
-  _enable_fortran=yes
+  _enable_ada=no
+  _enable_fortran=no
   _enable_jit=yes
   _enable_lto=yes
-  _enable_objc=yes
+  _enable_objc=no
   _enable_rust=no
 else
   _enable_ada=no
@@ -21,7 +21,7 @@ else
   _enable_rust=no
 fi
 
-_threads="posix"
+_threads="win32"
 
 _realname=gcc
 pkgbase=mingw-w64-${_realname}
@@ -78,12 +78,13 @@ makedepends=("${MINGW_PACKAGE_PREFIX}-${_realname}"
              "${MINGW_PACKAGE_PREFIX}-mpfr"
              "${MINGW_PACKAGE_PREFIX}-python"
              "${MINGW_PACKAGE_PREFIX}-windows-default-manifest"
-             "${MINGW_PACKAGE_PREFIX}-winpthreads"
+#            "${MINGW_PACKAGE_PREFIX}-winpthreads"
              "${MINGW_PACKAGE_PREFIX}-zlib"
              "${MINGW_PACKAGE_PREFIX}-zstd")
 options=('!emptydirs') # '!strip' 'debug')
 source=(${_url}/${_sourcedir}.tar.xz{,.sig}
         "gdbinit"
+        0001-Linker-flag-change-required-for-win32-threading.patch
         0002-i386-Keep-SEH-enabled-for-Win64-sysv_abi-functions.patch::"https://gcc.gnu.org/git/?p=gcc.git;a=patch;h=b0f09b72d9e1783e8ccaf2d8c1c72b03e3973f0b;hp=e88f8d7bfc811f6d152c42ba009255506f5beba1"
         0003-Windows-Follow-Posix-dir-exists-semantics-more-close.patch
         0007-Build-EXTRA_GNATTOOLS-for-Ada.patch
@@ -143,7 +144,9 @@ prepare() {
   cd "${srcdir}"/${_sourcedir}
 
   apply_patch_with_msg \
+    0001-Linker-flag-change-required-for-win32-threading.patch \
     0002-i386-Keep-SEH-enabled-for-Win64-sysv_abi-functions.patch \
+    0001-Linker-flag-change-required-for-win32-threading.patch \
     0003-Windows-Follow-Posix-dir-exists-semantics-more-close.patch \
     0007-Build-EXTRA_GNATTOOLS-for-Ada.patch \
     0008-Prettify-linking-no-undefined.patch \
@@ -276,10 +279,11 @@ build() {
     --enable-graphite \
     --enable-fully-dynamic-string \
     --enable-libstdcxx-backtrace=yes \
+    --enable-libstdcxx-threads \
     --enable-libstdcxx-filesystem-ts \
     --enable-libstdcxx-time \
     --disable-libstdcxx-pch \
-    --enable-libgomp \
+    --disable-libgomp \
     --disable-libssp \
     --disable-multilib \
     --disable-rpath \
@@ -311,8 +315,10 @@ build() {
 
 package_gcc-libs() {
   pkgdesc="GNU Compiler Collection (libraries) for MinGW-w64"
-  depends=("${MINGW_PACKAGE_PREFIX}-libwinpthread" "${MINGW_PACKAGE_PREFIX}-tzdata")
-  provides=("${MINGW_PACKAGE_PREFIX}-omp" "${MINGW_PACKAGE_PREFIX}-cc-libs")
+# depends=("${MINGW_PACKAGE_PREFIX}-libwinpthread" "${MINGW_PACKAGE_PREFIX}-tzdata")
+  depends=("${MINGW_PACKAGE_PREFIX}-tzdata")
+# provides=("${MINGW_PACKAGE_PREFIX}-omp" "${MINGW_PACKAGE_PREFIX}-cc-libs")
+  provides=("${MINGW_PACKAGE_PREFIX}-cc-libs")
 
   # Licensing information
 
@@ -329,7 +335,8 @@ package_gcc-libs() {
   mv "${pkgdir}"/libgcc_*.dll "${pkgdir}"${MINGW_PREFIX}/bin/
 
   # libitm* and libvtv* are disbled until fixed
-  for lib in libatomic libgomp libquadmath libstdc++-v3/src; do
+# for lib in libatomic libgomp libquadmath libstdc++-v3/src; do
+  for lib in libatomic libquadmath libstdc++-v3/src; do
     make -C $CHOST/$lib DESTDIR="${pkgdir}" install-toolexeclibLTLIBRARIES
   done
 
@@ -362,7 +369,7 @@ package_gcc() {
            "${MINGW_PACKAGE_PREFIX}-mpc"
            "${MINGW_PACKAGE_PREFIX}-${_realname}-libs=${pkgver}-${pkgrel}"
            "${MINGW_PACKAGE_PREFIX}-windows-default-manifest"
-           "${MINGW_PACKAGE_PREFIX}-winpthreads"
+#          "${MINGW_PACKAGE_PREFIX}-winpthreads"
            "${MINGW_PACKAGE_PREFIX}-zlib"
            "${MINGW_PACKAGE_PREFIX}-zstd")
   provides=("${MINGW_PACKAGE_PREFIX}-${_realname}-base"
@@ -399,7 +406,8 @@ package_gcc() {
   make DESTDIR="${pkgdir}" install-libcc1
   rm "${pkgdir}"${MINGW_PREFIX}/bin/libstdc++*.dll
 
-  for lib in libatomic libgomp libquadmath; do
+# for lib in libatomic libgomp libquadmath; do
+  for lib in libatomic libquadmath; do
     make -C $CHOST/$lib DESTDIR="${pkgdir}" install
     rm "${pkgdir}"${MINGW_PREFIX}/bin/${lib}*.dll
   done
@@ -411,7 +419,7 @@ package_gcc() {
   make DESTDIR="${pkgdir}" install-fixincludes
   make -C gcc DESTDIR="${pkgdir}" install-mkheaders
 
-  make -C $CHOST/libgomp DESTDIR="${pkgdir}" install-nodist_{libsubinclude,toolexeclib}HEADERS
+# make -C $CHOST/libgomp DESTDIR="${pkgdir}" install-nodist_{libsubinclude,toolexeclib}HEADERS
   make -C $CHOST/libquadmath DESTDIR="${pkgdir}" install-nodist_libsubincludeHEADERS
 
   make -C gcc DESTDIR="${pkgdir}" install-man install-info
@@ -483,7 +491,7 @@ package_gcc-fortran() {
 
   make -C $CHOST/libgfortran DESTDIR="${pkgdir}" install
   rm "${pkgdir}"${MINGW_PREFIX}/bin/libgfortran*.dll
-  make -C $CHOST/libgomp DESTDIR="${pkgdir}" install-nodist_fincludeHEADERS
+# make -C $CHOST/libgomp DESTDIR="${pkgdir}" install-nodist_fincludeHEADERS
   make -C gcc DESTDIR="${pkgdir}" fortran.install-{common,man,info}
   install -Dm755 gcc/f951.exe "${pkgdir}"${MINGW_PREFIX}/${_libdir}/f951.exe
 }
@@ -554,7 +562,7 @@ package_gcc-lto-dump() {
            "${MINGW_PACKAGE_PREFIX}-${_realname}-libs=${pkgver}-${pkgrel}"
            "${MINGW_PACKAGE_PREFIX}-gmp"
            "${MINGW_PACKAGE_PREFIX}-isl"
-           "${MINGW_PACKAGE_PREFIX}-libwinpthread"
+#          "${MINGW_PACKAGE_PREFIX}-libwinpthread"
            "${MINGW_PACKAGE_PREFIX}-mpc"
            "${MINGW_PACKAGE_PREFIX}-mpfr"
            "${MINGW_PACKAGE_PREFIX}-zlib"
@@ -571,7 +579,7 @@ package_libgccjit() {
            "${MINGW_PACKAGE_PREFIX}-${_realname}-libs=${pkgver}-${pkgrel}"
            "${MINGW_PACKAGE_PREFIX}-gmp"
            "${MINGW_PACKAGE_PREFIX}-isl"
-           "${MINGW_PACKAGE_PREFIX}-libwinpthread"
+#          "${MINGW_PACKAGE_PREFIX}-libwinpthread"
            "${MINGW_PACKAGE_PREFIX}-mpc"
            "${MINGW_PACKAGE_PREFIX}-mpfr"
            "${MINGW_PACKAGE_PREFIX}-zlib"
