@@ -87,6 +87,7 @@ source=(${_url}/${_sourcedir}.tar.xz{,.sig}
         0001-Linker-flag-change-required-for-win32-threading.patch
         0002-i386-Keep-SEH-enabled-for-Win64-sysv_abi-functions.patch::"https://gcc.gnu.org/git/?p=gcc.git;a=patch;h=b0f09b72d9e1783e8ccaf2d8c1c72b03e3973f0b;hp=e88f8d7bfc811f6d152c42ba009255506f5beba1"
         0003-Windows-Follow-Posix-dir-exists-semantics-more-close.patch
+        0004-bootstrap-lto-config-should-use-flto-auto.patch
         0007-Build-EXTRA_GNATTOOLS-for-Ada.patch
         0008-Prettify-linking-no-undefined.patch
         0011-Enable-shared-gnat-implib.patch
@@ -104,6 +105,7 @@ sha256sums=('50efb4d94c3397aff3b0d61a5abd748b4dd31d9d3f2ab7be05b171d36a510f79'
             'bce81824fc89e5e62cca350de4c17a27e27a18a1a1ad5ca3492aec1fc5af3234'
             'fdf4e90a56fc195a8f9a969af39335f158a29f29d42d33c00d908fc47cf5ad24'
             '3fc35067823f87e48dd3bfd265e7593000dc110fa9ad5f16c81b896765fc897a'
+            '0b8dcd83e2c548fbcfececdcba93037e820dc3918d3abdd8e74b3f97b9adb804'
             '90d5cb570083f9dea4ac0f0f87e3e8d2230f5052e6f9b946061a20a224a9d195'
             '8d2d53ae26b777d90189240494de1b895c5efa1ebdcdfbf5774f29fc742499d9'
             '5ef4148acc4a2b7ed648d4fe75fab5545e84b4b93a12d6ba4e4ea6061dd635fa'
@@ -148,6 +150,7 @@ prepare() {
     0002-i386-Keep-SEH-enabled-for-Win64-sysv_abi-functions.patch \
     0001-Linker-flag-change-required-for-win32-threading.patch \
     0003-Windows-Follow-Posix-dir-exists-semantics-more-close.patch \
+    0004-bootstrap-lto-config-should-use-flto-auto.patch \
     0007-Build-EXTRA_GNATTOOLS-for-Ada.patch \
     0008-Prettify-linking-no-undefined.patch \
     0011-Enable-shared-gnat-implib.patch \
@@ -264,6 +267,7 @@ build() {
   ../${_sourcedir}/configure \
     --prefix=${MINGW_PREFIX} \
     --with-local-prefix=${MINGW_PREFIX}/local \
+    --with-build-config='bootstrap-lto' \
     --libexecdir=${MINGW_PREFIX}/lib \
     --enable-bootstrap \
     --enable-checking=release \
@@ -310,7 +314,7 @@ build() {
 
   # https://gcc.gnu.org/onlinedocs/gccint/Makefile.html
   make -O STAGE1_CFLAGS="-O2" \
-          profiledbootstrap
+          --jobs profiledbootstrap
 }
 
 package_gcc-libs() {
