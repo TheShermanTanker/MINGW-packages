@@ -75,6 +75,7 @@ source=(${_url}/${_sourcedir}.tar.xz{,.sig}
         "gdbinit"
         0001-Linker-flag-change-required-for-win32-threading.patch
         0003-Windows-Follow-Posix-dir-exists-semantics-more-close.patch
+        0004-bootstrap-lto-config-should-use-flto-auto.patch
         0005-Windows-Don-t-ignore-native-system-header-dir.patch
         0007-Build-EXTRA_GNATTOOLS-for-Ada.patch
         0008-Prettify-linking-no-undefined.patch
@@ -94,6 +95,7 @@ sha256sums=('e2b09ec21660f01fecffb715e0120265216943f038d0e48a9868713e54f06cea'
             'bce81824fc89e5e62cca350de4c17a27e27a18a1a1ad5ca3492aec1fc5af3234'
             '0c919f89f1aa50141f957dd16272fe167996a17454b1b67a04b72232b1bc2e3d'
             '3fc35067823f87e48dd3bfd265e7593000dc110fa9ad5f16c81b896765fc897a'
+            '0b8dcd83e2c548fbcfececdcba93037e820dc3918d3abdd8e74b3f97b9adb804'
             'f7da015a69cff58fbc4b39c7072dfff334a01024470bb092ba31ad648899adf0'
             '90d5cb570083f9dea4ac0f0f87e3e8d2230f5052e6f9b946061a20a224a9d195'
             '8a40ea004a803b7e6aabd6c58d859502a57c87755dbcfedbdfed161f2fb7eb62'
@@ -138,6 +140,7 @@ prepare() {
   apply_patch_with_msg \
     0001-Linker-flag-change-required-for-win32-threading.patch \
     0003-Windows-Follow-Posix-dir-exists-semantics-more-close.patch \
+    0004-bootstrap-lto-config-should-use-flto-auto.patch \
     0005-Windows-Don-t-ignore-native-system-header-dir.patch \
     0007-Build-EXTRA_GNATTOOLS-for-Ada.patch \
     0008-Prettify-linking-no-undefined.patch \
@@ -249,6 +252,7 @@ build() {
   ../${_sourcedir}/configure \
     --prefix=${MINGW_PREFIX} \
     --with-local-prefix=${MINGW_PREFIX}/local \
+    --with-build-config='bootstrap-lto' \
     --with-native-system-header-dir=${MINGW_PREFIX}/include \
     --libexecdir=${MINGW_PREFIX}/lib \
     --enable-bootstrap \
@@ -296,7 +300,7 @@ build() {
 
   # https://gcc.gnu.org/onlinedocs/gccint/Makefile.html
   make -O STAGE1_CFLAGS="-O2" \
-          profiledbootstrap
+          --jobs profiledbootstrap
 }
 
 package_gcc-libs() {
