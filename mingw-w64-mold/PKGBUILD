@@ -14,7 +14,7 @@ msys2_references=(
   'archlinux: mold'
 )
 depends=("${MINGW_PACKAGE_PREFIX}-gcc-libs"
-         "${MINGW_PACKAGE_PREFIX}-libwinpthread-git"
+       # "${MINGW_PACKAGE_PREFIX}-libwinpthread-git"
          "${MINGW_PACKAGE_PREFIX}-mimalloc"
          "${MINGW_PACKAGE_PREFIX}-libblake3"
          "${MINGW_PACKAGE_PREFIX}-tbb"
